@@ -66,17 +66,20 @@ export default function IngredientRow({ day, mealKey, item }) {
             </option>
           ))}
         </select>
-        <input
-          type="number"
-          className={"ingredient-price" + (estimated ? " estimated" : "")}
-          title={estimated ? "Prix estimé — corrigez si besoin" : undefined}
-          value={item.price}
-          min="0"
-          step="0.01"
-          aria-label="Prix"
-          onChange={handlePriceChange}
-          onBlur={handlePriceBlur}
-        />
+        <div className="ingredient-price-wrap">
+          <input
+            type="number"
+            className={"ingredient-price" + (estimated ? " estimated" : "")}
+            title={estimated ? "Prix estimé — corrigez si besoin" : "Prix total de la ligne"}
+            value={item.price}
+            min="0"
+            step="0.01"
+            aria-label="Prix total en euros"
+            onChange={handlePriceChange}
+            onBlur={handlePriceBlur}
+          />
+          <span className="price-suffix">€</span>
+        </div>
         <button
           className="ingredient-delete btn-icon"
           onClick={() => removeItem(day, mealKey, item.id)}

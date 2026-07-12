@@ -6,10 +6,11 @@ import ShoppingTab from "./components/ShoppingTab.jsx";
 import HouseholdTab from "./components/HouseholdTab.jsx";
 import CatalogModal from "./components/CatalogModal.jsx";
 import LibraryPickModal from "./components/LibraryPickModal.jsx";
+import RescaleModal from "./components/RescaleModal.jsx";
 import Toast from "./components/Toast.jsx";
 
 export default function App() {
-  const { ready, activeTab, modal } = useApp();
+  const { ready, activeTab, modal, rescaleInfo } = useApp();
 
   if (!ready) return <div className="loading">Chargement…</div>;
 
@@ -24,6 +25,7 @@ export default function App() {
       </main>
       {modal?.type === "catalog" && <CatalogModal />}
       {modal?.type === "library" && <LibraryPickModal />}
+      {rescaleInfo && <RescaleModal />}
       <Toast />
     </div>
   );

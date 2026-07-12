@@ -41,6 +41,12 @@ db.exec(`
     adults INTEGER NOT NULL,
     children INTEGER NOT NULL
   );
+  CREATE TABLE IF NOT EXISTS shopping_status (
+    monday TEXT PRIMARY KEY,
+    done INTEGER NOT NULL DEFAULT 0,
+    done_at TEXT,
+    done_by TEXT
+  );
 `);
 
 const hasProfile = db.prepare("SELECT 1 FROM profile WHERE id = 1").get();

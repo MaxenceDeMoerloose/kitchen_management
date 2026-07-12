@@ -11,6 +11,11 @@ import {
   catalogAddCalc,
   portionsFor,
   normalize,
+  roundQty,
+  round2,
+  num,
+  weekHasItems,
+  aggregateWeek,
 } from "./utils.js";
 
 const Ctx = createContext(null);
@@ -35,9 +40,11 @@ export function AppProvider({ children }) {
   const [currentMonday, setCurrentMonday] = useState(() => isoLocal(mondayOf(new Date())));
   const [week, setWeek] = useState(emptyWeek);
   const [checked, setChecked] = useState({});
+  const [shoppingStatus, setShoppingStatus] = useState({ done: false, doneAt: null, doneBy: null });
   const [selectedDay, setSelectedDay] = useState(() => (new Date().getDay() + 6) % 7);
   const [activeTab, setActiveTab] = useState("planning");
   const [modal, setModal] = useState(null); // { type: 'catalog' | 'library', day, mealKey }
+  const [rescaleInfo, setRescaleInfo] = useState(null); // { oldPortions, newPortions }
   const [toast, setToast] = useState(null);
 
   const saveTimer = useRef(null);
@@ -45,7 +52,7 @@ export function AppProvider({ children }) {
 
   useEffect(() => {
     (async () => {
-      const [c, p, l, f, pr, w, ch] = await Promise.all([
+      const [c, p, l, f, pr, w, ch, ss] = await Promise.all([
         api.getCatalog(),
         api.getPriceDB(),
         api.getLibrary(),
@@ -53,6 +60,7 @@ export function AppProvider({ children }) {
         api.getProfile(),
         api.getWeek(currentMonday),
         api.getChecked(currentMonday),
+        api.getShoppingStatus(currentMonday),
       ]);
       setCatalog(c);
       setPriceDB(p);
@@ -61,6 +69,7 @@ export function AppProvider({ children }) {
       setProfile(pr);
       setWeek(w);
       setChecked(ch);
+      setShoppingStatus(ss);
       skipNextWeekSave.current = true;
       setReady(true);
     })();
@@ -93,10 +102,11 @@ export function AppProvider({ children }) {
   }, []);
 
   const loadWeek = useCallback(async (monday) => {
-    const [w, ch] = await Promise.all([api.getWeek(monday), api.getChecked(monday)]);
+    const [w, ch, ss] = await Promise.all([api.getWeek(monday), api.getChecked(monday), api.getShoppingStatus(monday)]);
     skipNextWeekSave.current = true;
     setWeek(w);
     setChecked(ch);
+    setShoppingStatus(ss);
     setCurrentMonday(monday);
   }, []);
 
@@ -229,15 +239,77 @@ export function AppProvider({ children }) {
     setChecked((c) => ({ ...c, [key]: !c[key] }));
   }, []);
 
+  const validateShopping = useCallback(
+    async (name) => {
+      const doneAt = new Date().toISOString();
+      const status = { done: true, doneAt, doneBy: name.trim() };
+      setShoppingStatus(status);
+      await api.saveShoppingStatus(currentMonday, status);
+      // Marquer toutes les lignes de la liste comme prises.
+      setChecked((c) => {
+        const next = { ...c };
+        for (const line of aggregateWeek(week)) next[line.key] = true;
+        return next;
+      });
+      showToast("Courses marquées comme faites");
+    },
+    [currentMonday, week, showToast]
+  );
+
+  const reopenShopping = useCallback(async () => {
+    const status = { done: false, doneAt: null, doneBy: null };
+    setShoppingStatus(status);
+    await api.saveShoppingStatus(currentMonday, status);
+  }, [currentMonday]);
+
   const saveProfile = useCallback(
     async (patch) => {
+      const oldPortions = portionsFor(profile);
       const next = { ...profile, ...patch };
       next.adults = Math.max(0, next.adults);
       next.children = Math.max(0, next.children);
       setProfile(next);
       await api.saveProfile(next);
+      const newPortions = portionsFor(next);
+      if (newPortions !== oldPortions && weekHasItems(week)) {
+        setRescaleInfo({ oldPortions, newPortions });
+      }
     },
-    [profile]
+    [profile, week]
+  );
+
+  const closeRescale = useCallback(() => setRescaleInfo(null), []);
+
+  // Réajuste les quantités (et prix, proportionnellement) des repas sélectionnés
+  // après un changement de composition du foyer. selectedKeys: Set de "day|mealKey".
+  const applyRescale = useCallback(
+    (selectedKeys) => {
+      if (!rescaleInfo || selectedKeys.size === 0) {
+        setRescaleInfo(null);
+        return;
+      }
+      const ratio = rescaleInfo.newPortions / (rescaleInfo.oldPortions || 1);
+      setWeek((w) => {
+        const next = { ...w };
+        for (const key of selectedKeys) {
+          const [day, mealKey] = key.split("|");
+          const meal = next[day][mealKey];
+          const items = meal.items.map((it) => {
+            const qty = num(it.qty);
+            if (!(qty > 0)) return it;
+            const unitPrice = num(it.price) > 0 ? num(it.price) / qty : 0;
+            const newQty = roundQty(qty * ratio, it.unit);
+            const newPrice = unitPrice > 0 ? round2(unitPrice * newQty) : it.price;
+            return { ...it, qty: newQty, price: newPrice };
+          });
+          next[day] = { ...next[day], [mealKey]: { ...meal, items } };
+        }
+        return next;
+      });
+      setRescaleInfo(null);
+      showToast("Quantités ajustées");
+    },
+    [rescaleInfo, showToast]
   );
 
   // Total sur une période : la semaine affichée utilise l'état mémoire (le debounce
@@ -286,9 +358,11 @@ export function AppProvider({ children }) {
     currentMonday,
     week,
     checked,
+    shoppingStatus,
     selectedDay,
     activeTab,
     modal,
+    rescaleInfo,
     toast,
     portions,
     setActiveTab,
@@ -314,6 +388,10 @@ export function AppProvider({ children }) {
     saveProfile,
     computePeriodTotal,
     showToast,
+    validateShopping,
+    reopenShopping,
+    closeRescale,
+    applyRescale,
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

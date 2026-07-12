@@ -50,13 +50,16 @@ export function money(v) {
   return num(v).toLocaleString("fr-BE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
 }
 
+// g/ml/kg/L sont mesurables en continu (on peut peser). Les autres unités
+// (pièce(s), tranche(s), paquet, boîte) ne s'achètent qu'en entier : on
+// arrondit toujours vers le haut (impossible d'acheter un demi paquet).
 export function roundQty(v, unit) {
   if (unit === "g" || unit === "ml") return Math.max(10, Math.round(v / 10) * 10);
   if (unit === "kg" || unit === "L") return Math.max(0.1, Math.round(v * 10) / 10);
-  if (unit === "pièce(s)" || unit === "tranche(s)") return Math.max(1, Math.round(v));
-  if (unit === "paquet" || unit === "boîte") return Math.max(0.5, Math.round(v * 2) / 2);
-  return Math.max(1, Math.round(v));
+  return Math.max(1, Math.ceil(v));
 }
+
+export const DISCRETE_UNITS = new Set(["pièce(s)", "tranche(s)", "paquet", "boîte"]);
 
 export function portionsFor(profile) {
   return num(profile.adults) * 1 + num(profile.children) * CHILD_FACTOR;
@@ -128,4 +131,25 @@ export function aggregateWeek(week) {
 
 export function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+}
+
+export function weekHasItems(week) {
+  if (!week) return false;
+  return Object.values(week).some((day) => Object.values(day).some((m) => (m.items || []).length > 0));
+}
+
+// Regroupe une liste de courses agrégée par catégorie du catalogue (ordre CATEGORY_ORDER),
+// les produits inconnus du catalogue (lignes libres) vont dans "Autres".
+export function groupByCategory(lines, catalog, categoryOrder) {
+  const catByName = new Map(catalog.map((c) => [normalize(c.nom), c.categorie]));
+  const groups = new Map(categoryOrder.map((c) => [c, []]));
+  groups.set("Autres", []);
+  for (const line of lines) {
+    const cat = catByName.get(normalize(line.name)) || "Autres";
+    if (!groups.has(cat)) groups.set(cat, []);
+    groups.get(cat).push(line);
+  }
+  return Array.from(groups.entries())
+    .map(([cat, items]) => ({ cat, items }))
+    .filter((g) => g.items.length > 0);
 }

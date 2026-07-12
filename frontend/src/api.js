@@ -27,4 +27,7 @@ export const api = {
   toggleFav: (name) => req("/favs/toggle", { method: "POST", body: JSON.stringify({ name }) }),
   getProfile: () => req("/profile"),
   saveProfile: (profile) => req("/profile", { method: "PUT", body: JSON.stringify(profile) }),
+  getShoppingStatus: (monday) => req(`/shopping-status/${monday}`),
+  saveShoppingStatus: (monday, status) =>
+    req(`/shopping-status/${monday}`, { method: "PUT", body: JSON.stringify(status) }),
 };
