@@ -1,5 +1,6 @@
 import { useApp } from "../store.jsx";
 import { UNITS } from "../constants.js";
+import { TrashIcon } from "./icons.jsx";
 
 export default function IngredientRow({ day, mealKey, item }) {
   const { updateItem, removeItem, suggest, rememberPrice } = useApp();
@@ -85,7 +86,7 @@ export default function IngredientRow({ day, mealKey, item }) {
           onClick={() => removeItem(day, mealKey, item.id)}
           aria-label="Supprimer"
         >
-          🗑
+          <TrashIcon />
         </button>
       </div>
     </div>

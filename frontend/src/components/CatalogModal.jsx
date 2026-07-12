@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useApp } from "../store.jsx";
 import { CATEGORY_ORDER, DAYS, MEALS, UNITS } from "../constants.js";
+import { StarIcon } from "./icons.jsx";
 import { money, normalize, roundQty, round2 } from "../utils.js";
 
 const MEAL_LABEL = Object.fromEntries(MEALS.map((m) => [m.key, m.label]));
@@ -65,8 +66,14 @@ export default function CatalogModal() {
     const price = round2(unitPrice * qty);
     return (
       <div className="catalog-item" key={item.nom}>
-        <button className="star-btn" onClick={() => toggleFav(item.nom)} aria-label="Favori">
-          {isFav ? "★" : "☆"}
+        <button
+          className="icon-btn"
+          onClick={() => toggleFav(item.nom)}
+          aria-label={isFav ? "Retirer des favoris" : "Ajouter aux favoris"}
+          aria-pressed={isFav}
+          title={isFav ? "Retirer des favoris" : "Ajouter aux favoris"}
+        >
+          <StarIcon filled={isFav} />
         </button>
         <span className="catalog-emoji">{item.emoji}</span>
         <div className="catalog-info">

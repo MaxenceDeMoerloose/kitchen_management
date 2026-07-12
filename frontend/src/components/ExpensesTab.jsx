@@ -1,14 +1,20 @@
 import { useState } from "react";
 import { useApp } from "../store.jsx";
 import ReceiptScanFlow from "./ReceiptScanFlow.jsx";
+import ReceiptDetail from "./ReceiptDetail.jsx";
 import ParticipantsManager from "./ParticipantsManager.jsx";
-import { money, formatDateShort } from "../utils.js";
+import { money, formatDateShort, num, round2 } from "../utils.js";
 
 export default function ExpensesTab() {
-  const { balances, receipts, participants, deleteReceiptEntry } = useApp();
+  const { balances, receipts, participants } = useApp();
   const [scanning, setScanning] = useState(false);
+  const [openId, setOpenId] = useState(null);
 
   if (scanning) return <ReceiptScanFlow onClose={() => setScanning(false)} />;
+
+  // On relit le ticket depuis le store à chaque rendu : après une modification, la modale
+  // affiche la version à jour sans avoir à la refermer.
+  const openReceipt = receipts.find((r) => r.id === openId) || null;
 
   return (
     <div className="expenses-tab">
@@ -39,11 +45,19 @@ export default function ExpensesTab() {
         <div className="receipt-list">
           {receipts.map((r) => {
             const payer = participants.find((p) => p.id === r.paidBy);
+            const itemsSum = round2(r.items.reduce((s, it) => s + num(it.totalPrice), 0));
+            const mismatch = Math.abs(itemsSum - num(r.total)) > 0.01;
             return (
-              <div className="receipt-card" key={r.id}>
-                <div>
+              <button
+                className="receipt-card"
+                key={r.id}
+                onClick={() => setOpenId(r.id)}
+                aria-label={`Voir le détail du ticket ${r.store} du ${formatDateShort(r.purchaseDate)}`}
+              >
+                <div className="receipt-card-main">
                   <div className="receipt-card-title">
                     {r.store} — {formatDateShort(r.purchaseDate)}
+                    {mismatch && <span className="receipt-card-flag" title="Le compte n'y est pas">⚠️</span>}
                   </div>
                   <div className="receipt-card-meta">
                     {payer ? `Payé par ${payer.name}` : "Payeur inconnu"} · {r.items.length} article
@@ -51,24 +65,19 @@ export default function ExpensesTab() {
                   </div>
                 </div>
                 <div className="receipt-card-actions">
+                  {r.imageFilename && <span className="receipt-card-photo-dot" title="Photo disponible">📎</span>}
                   <span className="receipt-card-total">{money(r.total)}</span>
-                  <button
-                    className="btn-icon"
-                    onClick={() => {
-                      if (confirm("Supprimer cette dépense ?")) deleteReceiptEntry(r.id);
-                    }}
-                    aria-label="Supprimer"
-                  >
-                    🗑
-                  </button>
+                  <span className="receipt-card-chevron" aria-hidden="true">›</span>
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
       </div>
 
       <ParticipantsManager />
+
+      {openReceipt && <ReceiptDetail receipt={openReceipt} onClose={() => setOpenId(null)} />}
     </div>
   );
 }

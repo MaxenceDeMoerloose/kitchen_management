@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useApp } from "../store.jsx";
+import { TrashIcon } from "./icons.jsx";
 
 export default function ParticipantsManager() {
   const { participants, addParticipant, renameParticipant, deleteParticipant } = useApp();
@@ -59,7 +60,7 @@ export default function ParticipantsManager() {
                   }}
                   aria-label="Supprimer"
                 >
-                  🗑
+                  <TrashIcon />
                 </button>
               </>
             )}

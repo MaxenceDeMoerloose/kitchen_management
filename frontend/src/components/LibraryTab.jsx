@@ -1,6 +1,7 @@
 import { useApp } from "../store.jsx";
 import { MEALS } from "../constants.js";
 import { money } from "../utils.js";
+import { TrashIcon } from "./icons.jsx";
 
 const MEAL_LABEL = Object.fromEntries(MEALS.map((m) => [m.key, m.label]));
 
@@ -10,7 +11,7 @@ export default function LibraryTab() {
   if (library.length === 0) {
     return (
       <p className="empty-message">
-        Aucun repas enregistré. Utilisez ⭐ sur un repas du planning pour l'ajouter ici.
+        Aucun repas enregistré. Utilisez l’étoile ☆ sur un repas du planning pour l'ajouter ici.
       </p>
     );
   }
@@ -42,7 +43,7 @@ export default function LibraryTab() {
                 }}
                 aria-label="Supprimer"
               >
-                🗑
+                <TrashIcon />
               </button>
             </div>
           </div>

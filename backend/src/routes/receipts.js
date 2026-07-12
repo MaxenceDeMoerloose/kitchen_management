@@ -10,11 +10,22 @@ import { extractReceiptWithAI, isOpenRouterEnabled } from "../ocr/openrouter.js"
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
 
-// OCR local (Tesseract + parseur regex) : gratuit et sans configuration, mais moins précis.
+// OCR local (Tesseract + parseur regex) : gratuit et sans configuration, mais nettement moins
+// précis. Il ne sert que si aucune clé API n'est configurée ou si tous les modèles échouent.
 async function scanWithTesseract(buffer, ocrTmpPath) {
   await preprocessForOcr(buffer, ocrTmpPath);
   const rawText = await extractText(ocrTmpPath);
-  return { ...parseReceipt(rawText), engine: "tesseract" };
+  const parsed = parseReceipt(rawText);
+  const itemsSum = Math.round((parsed.items || []).reduce((s, it) => s + (Number(it.totalPrice) || 0), 0) * 100) / 100;
+  return {
+    ...parsed,
+    engine: "tesseract",
+    model: null,
+    itemsSum,
+    // L'OCR local se trompe souvent : on demande systématiquement une relecture.
+    warnings: ["Lu par l'OCR local, moins fiable que l'IA — vérifiez chaque ligne."],
+    needsReview: true,
+  };
 }
 
 // Analyse un ticket : sauvegarde la photo, extrait les articles, renvoie un brouillon
@@ -35,7 +46,7 @@ router.post("/scan", upload.single("image"), async (req, res) => {
       try {
         parsed = { ...(await extractReceiptWithAI(req.file.buffer)), engine: "openrouter" };
       } catch (err) {
-        console.error("OpenRouter a échoué, repli sur l'OCR local:", err.message);
+        console.error("Tous les modèles ont échoué, repli sur l'OCR local:", err.message);
         parsed = await scanWithTesseract(req.file.buffer, ocrTmpPath);
       }
     } else {
@@ -63,6 +74,7 @@ function mapReceipt(row) {
     .all(row.id)
     .map((it) => ({ id: it.id, name: it.name, qty: it.qty, unit: it.unit, unitPrice: it.unit_price, totalPrice: it.total_price }));
   const shares = db.prepare("SELECT participant_id FROM receipt_shares WHERE receipt_id = ?").all(row.id).map((s) => s.participant_id);
+  const itemsSum = Math.round(items.reduce((s, it) => s + it.totalPrice, 0) * 100) / 100;
   return {
     id: row.id,
     store: row.store,
@@ -70,7 +82,11 @@ function mapReceipt(row) {
     paidBy: row.paid_by,
     total: row.total,
     imageFilename: row.image_path,
+    rawText: row.raw_ocr_text,
+    engine: row.engine,
+    model: row.model,
     items,
+    itemsSum,
     shares,
   };
 }
@@ -87,7 +103,7 @@ router.get("/:id", (req, res) => {
 });
 
 const saveReceipt = db.transaction((id, body, isUpdate) => {
-  const { store, purchaseDate, paidBy, total, imageFilename, rawText, items, shares } = body;
+  const { store, purchaseDate, paidBy, total, imageFilename, rawText, engine, model, items, shares } = body;
   if (isUpdate) {
     db.prepare(
       "UPDATE receipts SET store=?, purchase_date=?, paid_by=?, total=? WHERE id=?"
@@ -96,8 +112,8 @@ const saveReceipt = db.transaction((id, body, isUpdate) => {
     db.prepare("DELETE FROM receipt_shares WHERE receipt_id = ?").run(id);
   } else {
     db.prepare(
-      "INSERT INTO receipts (id, store, purchase_date, paid_by, total, image_path, raw_ocr_text, created_at) VALUES (?,?,?,?,?,?,?,?)"
-    ).run(id, store, purchaseDate, paidBy || null, total, imageFilename || null, rawText || null, Date.now());
+      "INSERT INTO receipts (id, store, purchase_date, paid_by, total, image_path, raw_ocr_text, engine, model, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)"
+    ).run(id, store, purchaseDate, paidBy || null, total, imageFilename || null, rawText || null, engine || null, model || null, Date.now());
   }
   const insertItem = db.prepare(
     "INSERT INTO receipt_items (id, receipt_id, name, qty, unit, unit_price, total_price) VALUES (?,?,?,?,?,?,?)"

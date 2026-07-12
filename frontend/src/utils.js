@@ -139,6 +139,18 @@ export function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 }
 
+// Nom sous lequel un repas est enregistré dans la bibliothèque : la première ligne de sa
+// description. Partagé entre l'enregistrement (store) et l'étoile de la carte repas, qui
+// s'en sert pour savoir si le repas y figure déjà.
+export function libraryNameOf(meal) {
+  const firstLine = ((meal?.desc || "").split("\n")[0] || "").trim();
+  return firstLine ? firstLine.slice(0, 60) : "Repas sans titre";
+}
+
+export function mealIsEmpty(meal) {
+  return !(meal?.desc || "").trim() && (meal?.items || []).length === 0;
+}
+
 export function weekHasItems(week) {
   if (!week) return false;
   return Object.values(week).some((day) => Object.values(day).some((m) => (m.items || []).length > 0));

@@ -110,6 +110,12 @@ if (!profileCols.includes("child_factor")) {
   db.exec("ALTER TABLE profile ADD COLUMN child_factor REAL NOT NULL DEFAULT 0.65");
 }
 
+// Migration : on garde la trace de la façon dont chaque ticket a été lu (modèle Vision ou
+// OCR local) pour l'afficher dans le détail du ticket.
+const receiptCols = db.prepare("PRAGMA table_info(receipts)").all().map((c) => c.name);
+if (!receiptCols.includes("engine")) db.exec("ALTER TABLE receipts ADD COLUMN engine TEXT");
+if (!receiptCols.includes("model")) db.exec("ALTER TABLE receipts ADD COLUMN model TEXT");
+
 const hasProfile = db.prepare("SELECT 1 FROM profile WHERE id = 1").get();
 if (!hasProfile) {
   db.prepare("INSERT INTO profile (id, adults, children, child_factor) VALUES (1, 2, 0, 0.65)").run();

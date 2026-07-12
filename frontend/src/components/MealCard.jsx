@@ -1,10 +1,36 @@
 import { useApp } from "../store.jsx";
 import IngredientRow from "./IngredientRow.jsx";
-import { money, mealTotal } from "../utils.js";
+import { StarIcon, BookIcon, SearchIcon } from "./icons.jsx";
+import { money, mealTotal, libraryNameOf, mealIsEmpty } from "../utils.js";
 
 export default function MealCard({ day, mealKey, label }) {
-  const { week, updateMealDesc, addFreeLine, openCatalog, openLibrary, saveMealToLibrary } = useApp();
+  const {
+    week,
+    library,
+    updateMealDesc,
+    addFreeLine,
+    openCatalog,
+    openLibrary,
+    saveMealToLibrary,
+    deleteLibraryEntry,
+    showToast,
+  } = useApp();
   const meal = week[day][mealKey];
+
+  // L'étoile est pleine quand ce repas figure déjà dans la bibliothèque : on le reconnaît au
+  // nom sous lequel il y serait enregistré. Sans ça, recliquer créait un doublon.
+  const savedEntry = mealIsEmpty(meal)
+    ? null
+    : library.find((e) => e.mealType === mealKey && e.name === libraryNameOf(meal));
+
+  function toggleLibrary() {
+    if (savedEntry) {
+      deleteLibraryEntry(savedEntry.id);
+      showToast("Repas retiré de la bibliothèque");
+    } else {
+      saveMealToLibrary(day, mealKey);
+    }
+  }
 
   return (
     <div className="meal-card">
@@ -12,18 +38,21 @@ export default function MealCard({ day, mealKey, label }) {
         <span className="meal-label">{label}</span>
         <span className="meal-cost">{money(mealTotal(meal))}</span>
         <button
-          className="btn-icon"
+          className="icon-btn"
           title="Utiliser un repas de la bibliothèque"
+          aria-label="Utiliser un repas de la bibliothèque"
           onClick={() => openLibrary(day, mealKey)}
         >
-          📖
+          <BookIcon />
         </button>
         <button
-          className="btn-icon"
-          title="Enregistrer ce repas dans la bibliothèque"
-          onClick={() => saveMealToLibrary(day, mealKey)}
+          className="icon-btn"
+          onClick={toggleLibrary}
+          aria-pressed={Boolean(savedEntry)}
+          aria-label={savedEntry ? "Retirer de la bibliothèque" : "Enregistrer dans la bibliothèque"}
+          title={savedEntry ? "Retirer de la bibliothèque" : "Enregistrer ce repas dans la bibliothèque"}
         >
-          ⭐
+          <StarIcon filled={Boolean(savedEntry)} />
         </button>
       </div>
       <textarea
@@ -38,8 +67,8 @@ export default function MealCard({ day, mealKey, label }) {
         ))}
       </div>
       <div className="meal-card-actions">
-        <button className="btn btn-primary" onClick={() => openCatalog(day, mealKey)}>
-          🔍 Catalogue
+        <button className="btn btn-primary btn-with-icon" onClick={() => openCatalog(day, mealKey)}>
+          <SearchIcon size={17} /> Catalogue
         </button>
         <button className="btn" onClick={() => addFreeLine(day, mealKey)}>
           ＋ Ligne libre

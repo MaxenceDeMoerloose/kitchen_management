@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useApp } from "../store.jsx";
 import { MEALS, CATEGORY_ORDER } from "../constants.js";
 import { formatDateShort, parseLocalDate, mealIndex, groupByCategory, money, capitalize } from "../utils.js";
+import { TrashIcon } from "./icons.jsx";
 
 const MEAL_LABEL = Object.fromEntries(MEALS.map((m) => [m.key, m.label]));
 
@@ -191,7 +192,7 @@ export default function GestionTab() {
                       }}
                       aria-label="Supprimer"
                     >
-                      🗑
+                      <TrashIcon />
                     </button>
                   </div>
                 </div>

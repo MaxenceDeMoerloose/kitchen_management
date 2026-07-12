@@ -16,7 +16,7 @@ export default function LibraryPickModal() {
         <div className="modal-body">
           {library.length === 0 && (
             <p className="empty-message">
-              Bibliothèque vide — utilisez ⭐ sur un repas pour l'enregistrer d'abord.
+              Bibliothèque vide — utilisez l’étoile ☆ sur un repas pour l'enregistrer d'abord.
             </p>
           )}
           {library.map((entry) => {

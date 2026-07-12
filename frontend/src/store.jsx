@@ -18,6 +18,8 @@ import {
   dayHasItems,
   aggregateWeek,
   mealInRange,
+  libraryNameOf,
+  mealIsEmpty,
 } from "./utils.js";
 
 const Ctx = createContext(null);
@@ -221,15 +223,13 @@ export function AppProvider({ children }) {
   const saveMealToLibrary = useCallback(
     async (day, mealKey) => {
       const meal = week[day][mealKey];
-      if (!meal.desc.trim() && meal.items.length === 0) {
+      if (mealIsEmpty(meal)) {
         showToast("Repas vide — rien à enregistrer");
         return;
       }
-      const firstLine = (meal.desc.split("\n")[0] || "").trim();
-      const name = firstLine ? firstLine.slice(0, 60) : "Repas sans titre";
       const entry = {
         id: uid(),
-        name,
+        name: libraryNameOf(meal),
         mealType: mealKey,
         desc: meal.desc,
         items: meal.items.map((it) => ({ ...it, id: uid() })),

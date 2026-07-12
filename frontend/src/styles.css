@@ -82,6 +82,9 @@ input, select, textarea { font-size: 16px; }
   min-height: 2.5rem;
 }
 .btn:hover { background: #f9fafb; }
+/* Bouton dont le libellé est précédé d'une icône : aligne le trait sur le texte. */
+.btn-with-icon { display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; }
+.btn-with-icon svg { flex-shrink: 0; }
 .btn-primary { background: #111827; color: #fff; border-color: #111827; }
 .btn-primary:hover { background: #1f2937; }
 .btn-icon {
@@ -147,19 +150,43 @@ input, select, textarea { font-size: 16px; }
   color: #374151;
 }
 .day-household-icon { flex-shrink: 0; }
-.day-household-stepper { display: flex; align-items: center; gap: 0.35rem; }
-.day-household-stepper .btn-icon { min-width: 1.8rem; min-height: 1.8rem; border: 1px solid #e5e7eb; font-size: 0.9rem; }
-.day-household-stepper span { min-width: 5.2rem; }
+/* Le nombre de personnes s'ouvre dans une popup : un seul clic, une seule validation. */
+.day-household-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font: inherit;
+  color: inherit;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.day-household-btn:hover { border-color: #d1d5db; background: #f9fafb; }
+.day-household-edit { color: #9ca3af; font-size: 0.85rem; }
 .day-household-portions { font-weight: 600; color: #111827; }
 .day-household-default { color: #9ca3af; font-size: 0.8rem; }
-.day-household-reset {
-  background: none;
-  border: none;
-  color: #6b7280;
-  font-size: 0.8rem;
-  text-decoration: underline;
-  padding: 0.2rem 0;
+.day-household-custom { color: #6b7280; font-size: 0.8rem; }
+
+/* Popup de saisie du foyer du jour */
+.household-modal .modal-body { display: flex; flex-direction: column; gap: 0.9rem; }
+.household-field { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+.household-field label { font-weight: 600; }
+.household-input-row { display: flex; align-items: center; gap: 0.4rem; }
+.household-input-row .btn-icon { min-width: 2.2rem; min-height: 2.2rem; border: 1px solid #e5e7eb; font-size: 1.1rem; }
+.household-input-row input {
+  width: 4rem;
+  text-align: center;
+  font-size: 1.05rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.45rem 0.3rem;
 }
+.household-portions { margin: 0; font-size: 1rem; }
+.household-portions .catalog-note { margin: 0; display: inline; }
+.household-reset { align-self: flex-start; font-size: 0.85rem; }
 
 /* Meal grid */
 .meal-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
@@ -319,15 +346,24 @@ input, select, textarea { font-size: 16px; }
   padding: 0.55rem 0;
   border-bottom: 1px solid #f3f4f6;
 }
-.star-btn {
+/* Boutons à icône au trait (étoile favori, bibliothèque) : même noir, même gabarit. */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: none;
   border: none;
-  color: #f59e0b;
-  font-size: 1.2rem;
-  min-width: 2rem;
-  min-height: 2rem;
+  color: #111827;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border-radius: 8px;
   flex-shrink: 0;
+  cursor: pointer;
+  transition: transform 0.1s, background 0.15s;
 }
+.icon-btn:hover { background: #f3f4f6; }
+.icon-btn:active { transform: scale(0.85); }
 .catalog-emoji { font-size: 1.3rem; text-align: center; flex-shrink: 0; width: 1.6rem; }
 .catalog-info { display: flex; flex-direction: column; flex: 1 1 140px; min-width: 0; }
 .catalog-name { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
@@ -607,19 +643,137 @@ input, select, textarea { font-size: 16px; }
 .scan-trigger { width: 100%; min-height: 3rem; font-size: 1rem; }
 
 .receipt-list { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem; }
+/* La carte est un <button> : tout le ticket est cliquable pour ouvrir son détail. */
 .receipt-card {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 0.6rem;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   padding: 0.7rem 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.05s;
 }
-.receipt-card-title { font-weight: 600; }
+.receipt-card:hover { border-color: #d1d5db; box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06); }
+.receipt-card:active { transform: scale(0.995); }
+.receipt-card-main { min-width: 0; }
+.receipt-card-title { font-weight: 600; display: flex; align-items: center; gap: 0.35rem; }
+.receipt-card-flag { font-size: 0.85rem; }
 .receipt-card-meta { color: #6b7280; font-size: 0.8rem; margin-top: 0.15rem; }
 .receipt-card-actions { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
 .receipt-card-total { font-weight: 700; }
+.receipt-card-photo-dot { font-size: 0.8rem; opacity: 0.6; }
+.receipt-card-chevron { color: #9ca3af; font-size: 1.3rem; line-height: 1; }
+
+/* Photo du ticket : vignette cliquable + plein écran */
+.receipt-photo {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f9fafb;
+  cursor: zoom-in;
+}
+.receipt-photo img { display: block; width: 100%; max-height: 240px; object-fit: cover; object-position: top; }
+.receipt-photo-hint {
+  position: absolute;
+  right: 0.5rem;
+  bottom: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: rgba(17, 24, 39, 0.75);
+  color: #fff;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+}
+.receipt-zoom-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  overflow: auto;
+  cursor: zoom-out;
+}
+.receipt-zoom-overlay img { max-width: 100%; height: auto; border-radius: 8px; cursor: default; }
+.receipt-zoom-close {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+/* Alerte de cohérence : la somme des lignes ne retombe pas sur le total du ticket. */
+.receipt-warning {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 10px;
+  padding: 0.65rem 0.75rem;
+  margin: 0.75rem 0;
+  font-size: 0.85rem;
+  color: #92400e;
+}
+
+.receipt-form-photo { margin: 0.5rem 0 0.75rem; }
+.receipt-form-photo .catalog-note { margin: 0.4rem 0 0; }
+
+/* Lignes de remise (montant négatif) : visuellement distinctes des achats. */
+.receipt-item-row.is-discount { background: #fef2f2; border-color: #fecaca; }
+.receipt-sum-row { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; flex-wrap: wrap; }
+.receipt-sum-value { color: #6b7280; font-size: 0.85rem; }
+
+/* Détail d'une dépense enregistrée */
+.receipt-detail-lines { display: flex; flex-direction: column; margin: 0.75rem 0; }
+.receipt-detail-line {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+.receipt-detail-line.is-discount .receipt-detail-price { color: #b91c1c; }
+.receipt-detail-name { min-width: 0; overflow-wrap: anywhere; }
+.receipt-detail-qty { color: #6b7280; font-size: 0.8rem; white-space: nowrap; }
+.receipt-detail-price { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.receipt-detail-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0;
+  border-top: 2px solid #111827;
+  font-size: 1.05rem;
+}
+.receipt-detail-meta { color: #374151; font-size: 0.85rem; margin-top: 0.75rem; }
+.receipt-detail-meta p { margin: 0.3rem 0; }
+.receipt-engine-badge { color: #6b7280; font-size: 0.78rem; }
+
+.btn-danger { color: #b91c1c; border-color: #fecaca; background: #fef2f2; }
+.btn-danger:hover { background: #fee2e2; }
 
 .participants-list { list-style: none; margin: 0.5rem 0; padding: 0; }
 .participants-list li { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; padding: 0.5rem 0; border-bottom: 1px solid #f3f4f6; }
