@@ -42,14 +42,16 @@ export default function CatalogModal() {
           {isFav ? "★" : "☆"}
         </button>
         <span className="catalog-emoji">{item.emoji}</span>
-        <span className="catalog-name">
-          {item.nom}
-          {dbEntry && <span className="badge-perso">prix perso</span>}
-        </span>
-        <span className="catalog-meta">
-          ≈ {qty} {item.unite} · {money(price)}
-        </span>
-        <button className="btn btn-primary" onClick={() => addFromCatalog(item)}>
+        <div className="catalog-info">
+          <span className="catalog-name">
+            {item.nom}
+            {dbEntry && <span className="badge-perso">prix perso</span>}
+          </span>
+          <span className="catalog-meta">
+            ≈ {qty} {item.unite} · {money(price)}
+          </span>
+        </div>
+        <button className="btn btn-primary catalog-add" onClick={() => addFromCatalog(item)}>
           ＋ Ajouter
         </button>
       </div>

@@ -31,49 +31,60 @@ export default function IngredientRow({ day, mealKey, item }) {
 
   return (
     <div className="ingredient-row">
-      <span className="ingredient-emoji">{item.emoji || "🛒"}</span>
-      <input
-        type="text"
-        className="ingredient-name"
-        value={item.name}
-        placeholder="Produit"
-        onChange={(e) => updateItem(day, mealKey, item.id, { name: e.target.value })}
-        onBlur={handleNameBlur}
-      />
-      <input
-        type="number"
-        className="ingredient-qty"
-        value={item.qty}
-        min="0"
-        step="any"
-        onChange={(e) =>
-          updateItem(day, mealKey, item.id, { qty: e.target.value === "" ? "" : Number(e.target.value) })
-        }
-      />
-      <select
-        className="ingredient-unit"
-        value={item.unit}
-        onChange={(e) => updateItem(day, mealKey, item.id, { unit: e.target.value })}
-      >
-        {UNITS.map((u) => (
-          <option key={u} value={u}>
-            {u}
-          </option>
-        ))}
-      </select>
-      <input
-        type="number"
-        className={"ingredient-price" + (estimated ? " estimated" : "")}
-        title={estimated ? "Prix estimé — corrigez si besoin" : undefined}
-        value={item.price}
-        min="0"
-        step="0.01"
-        onChange={handlePriceChange}
-        onBlur={handlePriceBlur}
-      />
-      <button className="btn-icon" onClick={() => removeItem(day, mealKey, item.id)} aria-label="Supprimer">
-        🗑
-      </button>
+      <div className="ingredient-top">
+        <span className="ingredient-emoji">{item.emoji || "🛒"}</span>
+        <input
+          type="text"
+          className="ingredient-name"
+          value={item.name}
+          placeholder="Produit"
+          onChange={(e) => updateItem(day, mealKey, item.id, { name: e.target.value })}
+          onBlur={handleNameBlur}
+        />
+      </div>
+      <div className="ingredient-bottom">
+        <input
+          type="number"
+          className="ingredient-qty"
+          value={item.qty}
+          min="0"
+          step="any"
+          aria-label="Quantité"
+          onChange={(e) =>
+            updateItem(day, mealKey, item.id, { qty: e.target.value === "" ? "" : Number(e.target.value) })
+          }
+        />
+        <select
+          className="ingredient-unit"
+          value={item.unit}
+          aria-label="Unité"
+          onChange={(e) => updateItem(day, mealKey, item.id, { unit: e.target.value })}
+        >
+          {UNITS.map((u) => (
+            <option key={u} value={u}>
+              {u}
+            </option>
+          ))}
+        </select>
+        <input
+          type="number"
+          className={"ingredient-price" + (estimated ? " estimated" : "")}
+          title={estimated ? "Prix estimé — corrigez si besoin" : undefined}
+          value={item.price}
+          min="0"
+          step="0.01"
+          aria-label="Prix"
+          onChange={handlePriceChange}
+          onBlur={handlePriceBlur}
+        />
+        <button
+          className="ingredient-delete btn-icon"
+          onClick={() => removeItem(day, mealKey, item.id)}
+          aria-label="Supprimer"
+        >
+          🗑
+        </button>
+      </div>
     </div>
   );
 }
