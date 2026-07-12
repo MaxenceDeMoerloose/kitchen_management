@@ -1,5 +1,9 @@
 node_modules/
+.env
+*.traineddata
 data/*.db
 data/*.db-journal
 data/*.db-wal
 data/*.db-shm
+data/receipts/
+data/tessdata/

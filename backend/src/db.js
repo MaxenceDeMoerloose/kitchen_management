@@ -7,6 +7,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.join(__dirname, "..", "data");
 fs.mkdirSync(dataDir, { recursive: true });
 
+export const receiptsDir = path.join(dataDir, "receipts");
+fs.mkdirSync(receiptsDir, { recursive: true });
+
 const db = new Database(path.join(dataDir, "app.db"));
 db.pragma("journal_mode = WAL");
 
@@ -68,6 +71,37 @@ db.exec(`
     children INTEGER NOT NULL,
     created_at INTEGER NOT NULL
   );
+  CREATE TABLE IF NOT EXISTS participants (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    created_at INTEGER NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS receipts (
+    id TEXT PRIMARY KEY,
+    store TEXT NOT NULL,
+    purchase_date TEXT NOT NULL,
+    paid_by TEXT,
+    total REAL NOT NULL,
+    image_path TEXT,
+    raw_ocr_text TEXT,
+    created_at INTEGER NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS receipt_items (
+    id TEXT PRIMARY KEY,
+    receipt_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    qty REAL NOT NULL,
+    unit TEXT NOT NULL,
+    unit_price REAL NOT NULL,
+    total_price REAL NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS receipt_shares (
+    receipt_id TEXT NOT NULL,
+    participant_id TEXT NOT NULL,
+    PRIMARY KEY (receipt_id, participant_id)
+  );
+  CREATE INDEX IF NOT EXISTS idx_receipt_items_receipt ON receipt_items(receipt_id);
+  CREATE INDEX IF NOT EXISTS idx_receipt_shares_receipt ON receipt_shares(receipt_id);
 `);
 
 // Migration : les bases créées avant l'ajout du facteur enfant n'ont pas la colonne.

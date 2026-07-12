@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import path from "path";
@@ -12,6 +13,9 @@ import profileRouter from "./routes/profile.js";
 import catalogRouter from "./routes/catalog.js";
 import shoppingStatusRouter from "./routes/shoppingStatus.js";
 import periodsRouter from "./routes/periods.js";
+import participantsRouter from "./routes/participants.js";
+import receiptsRouter from "./routes/receipts.js";
+import balancesRouter from "./routes/balances.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -28,6 +32,9 @@ app.use("/api/profile", profileRouter);
 app.use("/api/catalog", catalogRouter);
 app.use("/api/shopping-status", shoppingStatusRouter);
 app.use("/api/periods", periodsRouter);
+app.use("/api/participants", participantsRouter);
+app.use("/api/receipts", receiptsRouter);
+app.use("/api/balances", balancesRouter);
 
 // Sert le frontend buildé (app/frontend/dist) s'il existe, pour un déploiement en un seul service.
 const frontendDist = path.join(__dirname, "..", "..", "frontend", "dist");

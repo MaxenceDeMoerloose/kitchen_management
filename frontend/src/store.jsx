@@ -39,6 +39,9 @@ export function AppProvider({ children }) {
   const [favs, setFavs] = useState([]);
   const [profile, setProfile] = useState({ adults: 2, children: 0, childFactor: CHILD_FACTOR });
   const [periods, setPeriods] = useState([]);
+  const [participants, setParticipants] = useState([]);
+  const [receipts, setReceipts] = useState([]);
+  const [balances, setBalances] = useState([]);
 
   const [currentMonday, setCurrentMonday] = useState(() => isoLocal(mondayOf(new Date())));
   const [week, setWeek] = useState(emptyWeek);
@@ -55,7 +58,7 @@ export function AppProvider({ children }) {
 
   useEffect(() => {
     (async () => {
-      const [c, p, l, f, pr, w, ch, ss, pd] = await Promise.all([
+      const [c, p, l, f, pr, w, ch, ss, pd, parts, rec, bal] = await Promise.all([
         api.getCatalog(),
         api.getPriceDB(),
         api.getLibrary(),
@@ -65,6 +68,9 @@ export function AppProvider({ children }) {
         api.getChecked(currentMonday),
         api.getShoppingStatus(currentMonday),
         api.getPeriods(),
+        api.getParticipants(),
+        api.getReceipts(),
+        api.getBalances(),
       ]);
       setCatalog(c);
       setPriceDB(p);
@@ -75,6 +81,9 @@ export function AppProvider({ children }) {
       setChecked(ch);
       setShoppingStatus(ss);
       setPeriods(pd);
+      setParticipants(parts);
+      setReceipts(rec);
+      setBalances(bal);
       skipNextWeekSave.current = true;
       setReady(true);
     })();
@@ -434,6 +443,65 @@ export function AppProvider({ children }) {
     [currentMonday, week]
   );
 
+  const refreshExpenses = useCallback(async () => {
+    const [rec, bal] = await Promise.all([api.getReceipts(), api.getBalances()]);
+    setReceipts(rec);
+    setBalances(bal);
+  }, []);
+
+  const addParticipant = useCallback(
+    async (name) => {
+      if (!name.trim()) return;
+      const p = await api.addParticipant({ id: uid(), name: name.trim() });
+      setParticipants((ps) => [...ps, p]);
+      await refreshExpenses();
+    },
+    [refreshExpenses]
+  );
+
+  const renameParticipant = useCallback(async (id, name) => {
+    if (!name.trim()) return;
+    await api.updateParticipant(id, name.trim());
+    setParticipants((ps) => ps.map((p) => (p.id === id ? { ...p, name: name.trim() } : p)));
+  }, []);
+
+  const deleteParticipant = useCallback(
+    async (id) => {
+      await api.deleteParticipant(id);
+      setParticipants((ps) => ps.filter((p) => p.id !== id));
+      await refreshExpenses();
+    },
+    [refreshExpenses]
+  );
+
+  const scanReceipt = useCallback(async (file) => api.scanReceipt(file), []);
+
+  const saveReceipt = useCallback(
+    async (receipt) => {
+      await api.addReceipt(receipt);
+      await refreshExpenses();
+      showToast("Dépense enregistrée");
+    },
+    [refreshExpenses, showToast]
+  );
+
+  const updateReceiptEntry = useCallback(
+    async (id, receipt) => {
+      await api.updateReceipt(id, receipt);
+      await refreshExpenses();
+      showToast("Dépense mise à jour");
+    },
+    [refreshExpenses, showToast]
+  );
+
+  const deleteReceiptEntry = useCallback(
+    async (id) => {
+      await api.deleteReceipt(id);
+      await refreshExpenses();
+    },
+    [refreshExpenses]
+  );
+
   const value = {
     ready,
     catalog,
@@ -452,6 +520,9 @@ export function AppProvider({ children }) {
     toast,
     portions,
     periods,
+    participants,
+    receipts,
+    balances,
     setActiveTab,
     selectDay,
     goToWeek,
@@ -485,6 +556,13 @@ export function AppProvider({ children }) {
     addPeriod,
     deletePeriod,
     computePeriodShopping,
+    addParticipant,
+    renameParticipant,
+    deleteParticipant,
+    scanReceipt,
+    saveReceipt,
+    updateReceiptEntry,
+    deleteReceiptEntry,
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

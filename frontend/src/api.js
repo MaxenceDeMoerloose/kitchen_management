@@ -34,4 +34,24 @@ export const api = {
   getPeriods: () => req("/periods"),
   addPeriod: (period) => req("/periods", { method: "POST", body: JSON.stringify(period) }),
   deletePeriod: (id) => req(`/periods/${id}`, { method: "DELETE" }),
+
+  getParticipants: () => req("/participants"),
+  addParticipant: (p) => req("/participants", { method: "POST", body: JSON.stringify(p) }),
+  updateParticipant: (id, name) => req(`/participants/${id}`, { method: "PUT", body: JSON.stringify({ name }) }),
+  deleteParticipant: (id) => req(`/participants/${id}`, { method: "DELETE" }),
+
+  scanReceipt: async (file) => {
+    const form = new FormData();
+    form.append("image", file);
+    const res = await fetch(`${BASE}/receipts/scan`, { method: "POST", body: form });
+    if (!res.ok) throw new Error(`API error ${res.status} on /receipts/scan`);
+    return res.json();
+  },
+  getReceipts: () => req("/receipts"),
+  addReceipt: (receipt) => req("/receipts", { method: "POST", body: JSON.stringify(receipt) }),
+  updateReceipt: (id, receipt) => req(`/receipts/${id}`, { method: "PUT", body: JSON.stringify(receipt) }),
+  deleteReceipt: (id) => req(`/receipts/${id}`, { method: "DELETE" }),
+  receiptImageUrl: (filename) => `${BASE}/receipts/image/${filename}`,
+
+  getBalances: () => req("/balances"),
 };
