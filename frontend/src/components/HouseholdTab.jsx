@@ -50,11 +50,23 @@ export default function HouseholdTab() {
             </button>
           </div>
         </div>
+        <div className="stepper-row">
+          <span>Facteur enfant (portion / adulte)</span>
+          <input
+            type="number"
+            className="child-factor-input"
+            min="0"
+            max="2"
+            step="0.05"
+            value={profile.childFactor}
+            onChange={(e) => saveProfile({ childFactor: e.target.value === "" ? 0 : Number(e.target.value) })}
+          />
+        </div>
         <div className="info-box">
           Équivalent portions : {portions.toFixed(1).replace(".", ",")}
           <br />
-          Un enfant de 6-8 ans compte pour 0,65 portion adulte. Exemple : pour des pâtes (100 g/portion), le
-          catalogue proposera {pastaExample} g.
+          Un enfant de 6-8 ans compte pour {profile.childFactor.toFixed(2).replace(".", ",")} portion adulte. Exemple :
+          pour des pâtes (100 g/portion), le catalogue proposera {pastaExample} g.
         </div>
       </div>
 

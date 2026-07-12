@@ -11,6 +11,7 @@ import favsRouter from "./routes/favs.js";
 import profileRouter from "./routes/profile.js";
 import catalogRouter from "./routes/catalog.js";
 import shoppingStatusRouter from "./routes/shoppingStatus.js";
+import periodsRouter from "./routes/periods.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -26,6 +27,7 @@ app.use("/api/favs", favsRouter);
 app.use("/api/profile", profileRouter);
 app.use("/api/catalog", catalogRouter);
 app.use("/api/shopping-status", shoppingStatusRouter);
+app.use("/api/periods", periodsRouter);
 
 // Sert le frontend buildé (app/frontend/dist) s'il existe, pour un déploiement en un seul service.
 const frontendDist = path.join(__dirname, "..", "..", "frontend", "dist");

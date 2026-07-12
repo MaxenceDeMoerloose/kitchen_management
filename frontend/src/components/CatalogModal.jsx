@@ -1,13 +1,26 @@
 import { useEffect, useMemo, useState } from "react";
 import { useApp } from "../store.jsx";
-import { CATEGORY_ORDER, DAYS, MEALS } from "../constants.js";
+import { CATEGORY_ORDER, DAYS, MEALS, UNITS } from "../constants.js";
 import { money, normalize, roundQty, round2 } from "../utils.js";
 
 const MEAL_LABEL = Object.fromEntries(MEALS.map((m) => [m.key, m.label]));
 
+const emptyNewItem = () => ({
+  nom: "",
+  categorie: CATEGORY_ORDER[0],
+  unite: UNITS[0],
+  prix_moyen_eur: "",
+  base_par_portion: "",
+  emoji: "",
+});
+
 export default function CatalogModal() {
-  const { modal, closeModal, catalog, favs, toggleFav, addFromCatalog, priceDB, portions } = useApp();
+  const { modal, closeModal, catalog, favs, toggleFav, addFromCatalog, priceDB, portionsForDay, addCatalogItem, showToast } =
+    useApp();
   const [search, setSearch] = useState("");
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newItem, setNewItem] = useState(emptyNewItem);
+  const portions = portionsForDay(modal.day);
 
   useEffect(() => {
     function onKey(e) {
@@ -22,6 +35,20 @@ export default function CatalogModal() {
     () => catalog.filter((c) => !q || normalize(c.nom).includes(q) || normalize(c.categorie).includes(q)),
     [catalog, q]
   );
+
+  function openAddForm() {
+    setNewItem({ ...emptyNewItem(), nom: search.trim() });
+    setShowAddForm(true);
+  }
+
+  async function submitNewItem(e) {
+    e.preventDefault();
+    if (!newItem.nom.trim() || !(Number(newItem.prix_moyen_eur) > 0) || !(Number(newItem.base_par_portion) > 0)) return;
+    const saved = await addCatalogItem(newItem);
+    showToast(`${saved.emoji} ${saved.nom} ajouté au catalogue`);
+    setShowAddForm(false);
+    setSearch(saved.nom);
+  }
 
   const favSet = new Set(favs);
   const favItems = filtered.filter((c) => favSet.has(c.nom));
@@ -81,10 +108,86 @@ export default function CatalogModal() {
           Quantités proposées pour {portions.toFixed(1).replace(".", ",")} portions · ★ = favori (affiché en
           premier)
         </p>
+        {!showAddForm && (
+          <button className="add-product-toggle" onClick={openAddForm}>
+            ＋ Ajouter un nouveau produit au catalogue
+          </button>
+        )}
+        {showAddForm && (
+          <form className="add-product-form" onSubmit={submitNewItem}>
+            <input
+              type="text"
+              placeholder="Nom du produit"
+              value={newItem.nom}
+              onChange={(e) => setNewItem((n) => ({ ...n, nom: e.target.value }))}
+              autoFocus
+              required
+            />
+            <div className="add-product-row">
+              <input
+                type="text"
+                placeholder="Emoji"
+                maxLength="4"
+                value={newItem.emoji}
+                onChange={(e) => setNewItem((n) => ({ ...n, emoji: e.target.value }))}
+              />
+              <select
+                value={newItem.categorie}
+                onChange={(e) => setNewItem((n) => ({ ...n, categorie: e.target.value }))}
+              >
+                {CATEGORY_ORDER.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+              <select value={newItem.unite} onChange={(e) => setNewItem((n) => ({ ...n, unite: e.target.value }))}>
+                {UNITS.map((u) => (
+                  <option key={u} value={u}>
+                    {u}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="add-product-row">
+              <label>
+                Prix moyen (€ / {newItem.unite})
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  required
+                  value={newItem.prix_moyen_eur}
+                  onChange={(e) => setNewItem((n) => ({ ...n, prix_moyen_eur: e.target.value }))}
+                />
+              </label>
+              <label>
+                Quantité pour 1 portion ({newItem.unite})
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  required
+                  value={newItem.base_par_portion}
+                  onChange={(e) => setNewItem((n) => ({ ...n, base_par_portion: e.target.value }))}
+                />
+              </label>
+            </div>
+            <div className="add-product-actions">
+              <button type="button" className="btn" onClick={() => setShowAddForm(false)}>
+                Annuler
+              </button>
+              <button type="submit" className="btn btn-primary">
+                Ajouter au catalogue
+              </button>
+            </div>
+          </form>
+        )}
         <div className="modal-body">
           {filtered.length === 0 && (
             <p className="empty-message">
-              Aucun résultat pour « {search} ». Utilisez « Ligne libre » pour l'ajouter manuellement.
+              Aucun résultat pour « {search} ». Ajoutez-le au catalogue ci-dessus, ou utilisez « Ligne libre » pour
+              l'ajouter manuellement à ce repas.
             </p>
           )}
           {favItems.length > 0 && (

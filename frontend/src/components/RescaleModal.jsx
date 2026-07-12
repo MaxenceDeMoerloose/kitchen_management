@@ -1,13 +1,15 @@
 import { useMemo, useState } from "react";
 import { useApp } from "../store.jsx";
-import { DAYS_SHORT, MEALS } from "../constants.js";
+import { DAYS, DAYS_SHORT, MEALS } from "../constants.js";
 import { addDays } from "../utils.js";
 
 export default function RescaleModal() {
   const { rescaleInfo, closeRescale, applyRescale, week, currentMonday } = useApp();
+  const scopeDay = rescaleInfo?.scopeDay;
 
   const dayMeals = useMemo(() => {
-    return Array.from({ length: 7 }, (_, day) => {
+    const days = scopeDay != null ? [scopeDay] : Array.from({ length: 7 }, (_, i) => i);
+    return days.map((day) => {
       const meals = MEALS.map((m) => ({
         key: m.key,
         label: m.label,
@@ -15,7 +17,8 @@ export default function RescaleModal() {
       }));
       return { day, date: addDays(currentMonday, day), meals };
     });
-  }, [week, currentMonday]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [week, currentMonday, scopeDay]);
 
   const [selected, setSelected] = useState(() => {
     const s = new Set();
@@ -79,9 +82,9 @@ export default function RescaleModal() {
           </button>
         </div>
         <p className="catalog-note">
-          Le foyer est passé de {rescaleInfo.oldPortions.toFixed(1).replace(".", ",")} à{" "}
-          {rescaleInfo.newPortions.toFixed(1).replace(".", ",")} portions. Choisissez les repas déjà planifiés à
-          recalculer (quantités et prix).
+          {scopeDay != null ? `Le ${DAYS[scopeDay]}` : "Le foyer"} est passé de{" "}
+          {rescaleInfo.oldPortions.toFixed(1).replace(".", ",")} à {rescaleInfo.newPortions.toFixed(1).replace(".", ",")}{" "}
+          portions. Choisissez les repas déjà planifiés à recalculer (quantités et prix).
         </p>
         <div className="rescale-select-all">
           <button className="btn" onClick={() => selectAll(true)}>

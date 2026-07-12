@@ -1,4 +1,9 @@
-import { CHILD_FACTOR } from "./constants.js";
+import { CHILD_FACTOR, MEALS } from "./constants.js";
+
+const MEAL_ORDER = MEALS.map((m) => m.key);
+export function mealIndex(key) {
+  return MEAL_ORDER.indexOf(key);
+}
 
 export function normalize(name) {
   return (name || "").trim().toLowerCase();
@@ -61,8 +66,9 @@ export function roundQty(v, unit) {
 
 export const DISCRETE_UNITS = new Set(["pièce(s)", "tranche(s)", "paquet", "boîte"]);
 
-export function portionsFor(profile) {
-  return num(profile.adults) * 1 + num(profile.children) * CHILD_FACTOR;
+export function portionsFor(people, childFactor) {
+  const factor = Number.isFinite(childFactor) ? childFactor : CHILD_FACTOR;
+  return num(people.adults) * 1 + num(people.children) * factor;
 }
 
 // Priorité : PriceDB exacte > catalogue exact > catalogue partiel (>=3 caractères)
@@ -136,6 +142,20 @@ export function capitalize(s) {
 export function weekHasItems(week) {
   if (!week) return false;
   return Object.values(week).some((day) => Object.values(day).some((m) => (m.items || []).length > 0));
+}
+
+export function dayHasItems(day) {
+  if (!day) return false;
+  return Object.values(day).some((m) => (m.items || []).length > 0);
+}
+
+// Vrai si le repas `mealKey` du jour `dayDate` (Date, minuit local) est compris entre
+// [start + startMeal] et [end + endMeal] inclus (granularité repas, pas seulement jour).
+export function mealInRange(dayDate, mealKey, start, startMeal, end, endMeal) {
+  if (dayDate < start || dayDate > end) return false;
+  if (dayDate.getTime() === start.getTime() && mealIndex(mealKey) < mealIndex(startMeal)) return false;
+  if (dayDate.getTime() === end.getTime() && mealIndex(mealKey) > mealIndex(endMeal)) return false;
+  return true;
 }
 
 // Regroupe une liste de courses agrégée par catégorie du catalogue (ordre CATEGORY_ORDER),

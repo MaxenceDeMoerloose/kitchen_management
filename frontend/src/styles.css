@@ -132,7 +132,34 @@ input, select, textarea { font-size: 16px; }
 }
 .day-header h2 { margin: 0; font-size: 1.2rem; }
 .day-cost { font-weight: 600; }
-.household-reminder { color: #6b7280; font-size: 0.85rem; }
+
+.day-household {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+  color: #374151;
+}
+.day-household-icon { flex-shrink: 0; }
+.day-household-stepper { display: flex; align-items: center; gap: 0.35rem; }
+.day-household-stepper .btn-icon { min-width: 1.8rem; min-height: 1.8rem; border: 1px solid #e5e7eb; font-size: 0.9rem; }
+.day-household-stepper span { min-width: 5.2rem; }
+.day-household-portions { font-weight: 600; color: #111827; }
+.day-household-default { color: #9ca3af; font-size: 0.8rem; }
+.day-household-reset {
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 0.8rem;
+  text-decoration: underline;
+  padding: 0.2rem 0;
+}
 
 /* Meal grid */
 .meal-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
@@ -315,6 +342,39 @@ input, select, textarea { font-size: 16px; }
 }
 .catalog-add { flex-shrink: 0; white-space: nowrap; }
 
+.add-product-toggle {
+  margin: 0.5rem 1rem 0;
+  background: none;
+  border: 1px dashed #d1d5db;
+  border-radius: 10px;
+  padding: 0.5rem 0.75rem;
+  color: #374151;
+  text-align: left;
+  font-size: 0.85rem;
+}
+.add-product-toggle:hover { background: #f9fafb; }
+.add-product-form {
+  margin: 0.5rem 1rem 0;
+  padding: 0.75rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.add-product-form > input { border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.5rem 0.6rem; width: 100%; }
+.add-product-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.add-product-row input, .add-product-row select {
+  flex: 1 1 100px;
+  min-width: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.5rem 0.6rem;
+}
+.add-product-row label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.75rem; color: #6b7280; flex: 1 1 140px; }
+.add-product-actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
+
 .library-pick-item {
   display: flex;
   justify-content: space-between;
@@ -477,6 +537,7 @@ input, select, textarea { font-size: 16px; }
 .stepper { display: flex; align-items: center; gap: 0.6rem; }
 .stepper span { min-width: 1.2rem; text-align: center; font-weight: 600; }
 .stepper .btn-icon { border: 1px solid #e5e7eb; font-size: 1.2rem; }
+.child-factor-input { width: 5rem; border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.4rem 0.5rem; text-align: center; }
 .info-box { background: #f9fafb; border-radius: 10px; padding: 0.75rem; margin-top: 0.5rem; color: #374151; font-size: 0.85rem; }
 .period-inputs { display: flex; gap: 0.6rem; align-items: flex-end; flex-wrap: wrap; margin: 0.6rem 0; }
 .period-inputs label { display: flex; flex-direction: column; font-size: 0.8rem; color: #6b7280; gap: 0.25rem; flex: 1 1 130px; }
@@ -507,6 +568,32 @@ input, select, textarea { font-size: 16px; }
   max-width: calc(100vw - 2rem);
   text-align: center;
 }
+
+/* Gestion tab */
+.gestion-tab { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+@media (min-width: 900px) {
+  .gestion-tab { grid-template-columns: 380px 1fr; align-items: start; }
+}
+.period-form { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.5rem; }
+.period-form label,
+.period-form-label-field { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: #6b7280; }
+.period-form input, .period-form select {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.5rem 0.6rem;
+  width: 100%;
+}
+.period-form-row { display: flex; gap: 0.6rem; }
+.period-form-row > label { flex: 1; min-width: 0; }
+
+.period-list { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.5rem; }
+.period-card { border: 1px solid #e5e7eb; border-radius: 14px; padding: 0.85rem; }
+.period-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.6rem; flex-wrap: wrap; }
+.period-card-title { font-weight: 600; }
+.period-card-meta { color: #6b7280; font-size: 0.85rem; margin-top: 0.15rem; }
+.period-card-actions { display: flex; gap: 0.4rem; flex-shrink: 0; }
+.period-shopping { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #f3f4f6; }
+.period-shopping .shopping-footer { border-top: none; padding-top: 0; align-items: center; }
 
 @media print {
   body * { visibility: hidden; }

@@ -13,6 +13,7 @@ async function req(path, opts) {
 
 export const api = {
   getCatalog: () => req("/catalog"),
+  addCatalogItem: (item) => req("/catalog", { method: "POST", body: JSON.stringify(item) }),
   getWeek: (monday) => req(`/weeks/${monday}`),
   saveWeek: (monday, data) => req(`/weeks/${monday}`, { method: "PUT", body: JSON.stringify(data) }),
   getChecked: (monday) => req(`/checked/${monday}`),
@@ -30,4 +31,7 @@ export const api = {
   getShoppingStatus: (monday) => req(`/shopping-status/${monday}`),
   saveShoppingStatus: (monday, status) =>
     req(`/shopping-status/${monday}`, { method: "PUT", body: JSON.stringify(status) }),
+  getPeriods: () => req("/periods"),
+  addPeriod: (period) => req("/periods", { method: "POST", body: JSON.stringify(period) }),
+  deletePeriod: (id) => req(`/periods/${id}`, { method: "DELETE" }),
 };

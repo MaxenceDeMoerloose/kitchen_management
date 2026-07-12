@@ -4,6 +4,7 @@ import PlanningTab from "./components/PlanningTab.jsx";
 import LibraryTab from "./components/LibraryTab.jsx";
 import ShoppingTab from "./components/ShoppingTab.jsx";
 import HouseholdTab from "./components/HouseholdTab.jsx";
+import GestionTab from "./components/GestionTab.jsx";
 import CatalogModal from "./components/CatalogModal.jsx";
 import LibraryPickModal from "./components/LibraryPickModal.jsx";
 import RescaleModal from "./components/RescaleModal.jsx";
@@ -22,6 +23,7 @@ export default function App() {
         {activeTab === "courses" && <ShoppingTab />}
         {activeTab === "bibliotheque" && <LibraryTab />}
         {activeTab === "fiche" && <HouseholdTab />}
+        {activeTab === "gestion" && <GestionTab />}
       </main>
       {modal?.type === "catalog" && <CatalogModal />}
       {modal?.type === "library" && <LibraryPickModal />}

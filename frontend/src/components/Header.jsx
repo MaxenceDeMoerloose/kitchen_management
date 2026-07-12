@@ -6,6 +6,7 @@ const TABS = [
   { key: "courses", label: "Courses" },
   { key: "bibliotheque", label: "Bibliothèque" },
   { key: "fiche", label: "Fiche & totaux" },
+  { key: "gestion", label: "Gestion" },
 ];
 
 export default function Header() {

@@ -1,11 +1,12 @@
 import { useApp } from "../store.jsx";
 import DaySelector from "./DaySelector.jsx";
 import MealCard from "./MealCard.jsx";
+import DayHousehold from "./DayHousehold.jsx";
 import { MEALS, DAYS } from "../constants.js";
 import { money, dayTotal } from "../utils.js";
 
 export default function PlanningTab() {
-  const { week, selectedDay, profile, portions } = useApp();
+  const { week, selectedDay } = useApp();
   const day = week[selectedDay];
 
   return (
@@ -14,15 +15,8 @@ export default function PlanningTab() {
       <div className="day-header">
         <h2>{DAYS[selectedDay]}</h2>
         <span className="day-cost">{money(dayTotal(day))}</span>
-        <span className="household-reminder">
-          👥 {profile.adults} adulte{profile.adults > 1 ? "s" : ""}
-          {profile.children > 0
-            ? ` · ${profile.children} enfant${profile.children > 1 ? "s" : ""} (6-8 ans)`
-            : ""}
-          {" → "}
-          {portions.toFixed(1).replace(".", ",")} portions
-        </span>
       </div>
+      <DayHousehold day={selectedDay} />
       <div className="meal-grid">
         {MEALS.map((m) => (
           <MealCard key={m.key} day={selectedDay} mealKey={m.key} label={m.label} />

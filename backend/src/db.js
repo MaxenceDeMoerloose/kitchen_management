@@ -39,7 +39,8 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS profile (
     id INTEGER PRIMARY KEY CHECK (id = 1),
     adults INTEGER NOT NULL,
-    children INTEGER NOT NULL
+    children INTEGER NOT NULL,
+    child_factor REAL NOT NULL DEFAULT 0.65
   );
   CREATE TABLE IF NOT EXISTS shopping_status (
     monday TEXT PRIMARY KEY,
@@ -47,11 +48,37 @@ db.exec(`
     done_at TEXT,
     done_by TEXT
   );
+  CREATE TABLE IF NOT EXISTS custom_catalog (
+    nom TEXT PRIMARY KEY,
+    categorie TEXT NOT NULL,
+    emoji TEXT NOT NULL,
+    unite TEXT NOT NULL,
+    prix_moyen_eur REAL NOT NULL,
+    base_par_portion REAL NOT NULL,
+    created_at INTEGER NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS periods (
+    id TEXT PRIMARY KEY,
+    label TEXT NOT NULL,
+    start_date TEXT NOT NULL,
+    start_meal TEXT NOT NULL,
+    end_date TEXT NOT NULL,
+    end_meal TEXT NOT NULL,
+    adults INTEGER NOT NULL,
+    children INTEGER NOT NULL,
+    created_at INTEGER NOT NULL
+  );
 `);
+
+// Migration : les bases créées avant l'ajout du facteur enfant n'ont pas la colonne.
+const profileCols = db.prepare("PRAGMA table_info(profile)").all().map((c) => c.name);
+if (!profileCols.includes("child_factor")) {
+  db.exec("ALTER TABLE profile ADD COLUMN child_factor REAL NOT NULL DEFAULT 0.65");
+}
 
 const hasProfile = db.prepare("SELECT 1 FROM profile WHERE id = 1").get();
 if (!hasProfile) {
-  db.prepare("INSERT INTO profile (id, adults, children) VALUES (1, 2, 0)").run();
+  db.prepare("INSERT INTO profile (id, adults, children, child_factor) VALUES (1, 2, 0, 0.65)").run();
 }
 
 export default db;
