@@ -71,33 +71,6 @@ export function portionsFor(people, childFactor) {
   return num(people.adults) * 1 + num(people.children) * factor;
 }
 
-// Les quantités se comptent en g/ml (une portion de pâtes = 100 g), mais personne ne
-// connaît le prix d'un produit au gramme : on le saisit au kg/L et on convertit.
-// En interne, prix_moyen_eur reste TOUJOURS exprimé par unité de quantité (€/g pour du g),
-// pour que « prix unitaire × quantité » reste valide partout.
-const PRICE_UNIT = { g: { label: "kg", factor: 1000 }, ml: { label: "L", factor: 1000 } };
-
-export function priceUnitFor(unit) {
-  return PRICE_UNIT[unit] || { label: unit, factor: 1 };
-}
-
-// €/kg saisi -> €/g stocké
-export function toStoredPrice(displayPrice, unit) {
-  return num(displayPrice) / priceUnitFor(unit).factor;
-}
-// €/g stocké -> €/kg affiché
-export function toDisplayPrice(storedPrice, unit) {
-  return num(storedPrice) * priceUnitFor(unit).factor;
-}
-
-// Prix unitaire d'une ligne. Les lignes encodées avant l'ajout du champ `unitPrice` ne le
-// portent pas : on le reconstitue depuis le total et la quantité.
-export function unitPriceOf(item) {
-  if (num(item?.unitPrice) > 0) return num(item.unitPrice);
-  const qty = num(item?.qty);
-  return qty > 0 ? num(item?.price) / qty : 0;
-}
-
 // Priorité : PriceDB exacte > catalogue exact > catalogue partiel (>=3 caractères)
 export function suggestPrice(name, priceDB, catalog) {
   const n = normalize(name);
@@ -121,13 +94,10 @@ export function suggestPrice(name, priceDB, catalog) {
 export function catalogAddCalc(item, portions, priceDB) {
   const qty = roundQty(item.base_par_portion * Math.max(portions, 1), item.unite);
   const dbEntry = priceDB[normalize(item.nom)];
-  // Un prix perso n'est comparable que s'il a été relevé dans la MÊME unité : un prix
-  // à la pièce multiplié par des grammes donnerait n'importe quoi.
-  const usable = dbEntry && dbEntry.unit === item.unite;
-  const source = usable ? "perso" : "estimation";
-  const unitPrice = usable ? num(dbEntry.price) : num(item.prix_moyen_eur);
+  const source = dbEntry ? "perso" : "estimation";
+  const unitPrice = dbEntry ? dbEntry.price : item.prix_moyen_eur;
   const price = round2(unitPrice * qty);
-  return { qty, unit: item.unite, unitPrice, price, source, emoji: item.emoji };
+  return { qty, unit: item.unite, price, source, emoji: item.emoji };
 }
 
 export function mealTotal(meal) {

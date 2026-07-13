@@ -772,10 +772,6 @@ input, select, textarea { font-size: 16px; }
 .receipt-detail-meta p { margin: 0.3rem 0; }
 .receipt-engine-badge { color: #6b7280; font-size: 0.78rem; }
 
-/* Rappel du prix unitaire sous une ligne : rend visible d'où sort le total. */
-.ingredient-unit-price { display: block; color: #9ca3af; font-size: 0.75rem; margin-top: 0.2rem; }
-.add-product-hint { margin: 0.2rem 0 0.5rem; }
-
 .btn-danger { color: #b91c1c; border-color: #fecaca; background: #fef2f2; }
 .btn-danger:hover { background: #fee2e2; }
 

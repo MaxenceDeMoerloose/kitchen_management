@@ -5,10 +5,6 @@ import { uid, num } from "../utils.js";
 
 const LOADING_MESSAGES = ["Lecture du ticket…", "Extraction des articles…", "Vérification des totaux…"];
 
-// Lignes d'un ticket qui ne désignent pas un produit : elles n'ont rien à faire dans la
-// base de prix personnelle (on en a retrouvé, du type « remise — totale korting met xtra »).
-const DISCOUNT_LINE = /(remise|korting|réduction|reduction|\bbon\b|voordeel|gratis|totaal|total\b|te betalen|à payer)/i;
-
 const emptyDraft = (participants) => ({
   store: "Colruyt",
   purchaseDate: new Date().toISOString().slice(0, 10),
@@ -93,13 +89,9 @@ export default function ReceiptScanFlow({ onClose }) {
         shares: draft.shares,
       });
       if (syncPrices) {
-        // Une remise ou une ligne de total n'est pas un produit : l'enregistrer comme prix
-        // de référence polluait la base et faussait les suggestions.
+        // Les lignes de remise (prix négatif) ne sont pas des prix de référence.
         for (const it of draft.items) {
-          const name = it.name.trim();
-          if (!name || DISCOUNT_LINE.test(name)) continue;
-          if (num(it.totalPrice) <= 0 || num(it.unitPrice) <= 0) continue;
-          rememberPrice(name, num(it.unitPrice), it.unit);
+          if (it.name.trim() && num(it.unitPrice) > 0) rememberPrice(it.name, num(it.unitPrice), it.unit);
         }
       }
       onClose();

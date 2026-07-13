@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useApp } from "../store.jsx";
 import { CATEGORY_ORDER, DAYS, MEALS, UNITS } from "../constants.js";
 import { StarIcon } from "./icons.jsx";
-import { money, normalize, catalogAddCalc, priceUnitFor, toStoredPrice, num } from "../utils.js";
+import { money, normalize, roundQty, round2 } from "../utils.js";
 
 const MEAL_LABEL = Object.fromEntries(MEALS.map((m) => [m.key, m.label]));
 
@@ -42,20 +42,10 @@ export default function CatalogModal() {
     setShowAddForm(true);
   }
 
-  // Seul le nom est vraiment indispensable. L'emoji, le prix et la quantité par portion ont
-  // des valeurs de repli raisonnables : mieux vaut un produit approximatif dans le catalogue
-  // qu'un produit jamais encodé parce que le formulaire bloquait.
   async function submitNewItem(e) {
     e.preventDefault();
-    if (!newItem.nom.trim()) return;
-    const saved = await addCatalogItem({
-      ...newItem,
-      nom: newItem.nom.trim(),
-      emoji: newItem.emoji.trim() || "🛒",
-      // Le prix est saisi au kg/L pour les produits au poids, stocké au g/ml.
-      prix_moyen_eur: toStoredPrice(newItem.prix_moyen_eur, newItem.unite),
-      base_par_portion: num(newItem.base_par_portion) > 0 ? num(newItem.base_par_portion) : 1,
-    });
+    if (!newItem.nom.trim() || !(Number(newItem.prix_moyen_eur) > 0) || !(Number(newItem.base_par_portion) > 0)) return;
+    const saved = await addCatalogItem(newItem);
     showToast(`${saved.emoji} ${saved.nom} ajouté au catalogue`);
     setShowAddForm(false);
     setSearch(saved.nom);
@@ -70,9 +60,10 @@ export default function CatalogModal() {
 
   function renderItem(item) {
     const isFav = favSet.has(item.nom);
-    // Même calcul que l'ajout réel : l'aperçu ne peut pas mentir sur le prix.
-    const { qty, price, source } = catalogAddCalc(item, portions, priceDB);
-    const dbEntry = source === "perso";
+    const qty = roundQty(item.base_par_portion * Math.max(portions, 1), item.unite);
+    const dbEntry = priceDB[normalize(item.nom)];
+    const unitPrice = dbEntry ? dbEntry.price : item.prix_moyen_eur;
+    const price = round2(unitPrice * qty);
     return (
       <div className="catalog-item" key={item.nom}>
         <button
@@ -167,12 +158,12 @@ export default function CatalogModal() {
             </div>
             <div className="add-product-row">
               <label>
-                Prix moyen (€ / {priceUnitFor(newItem.unite).label})
+                Prix moyen (€ / {newItem.unite})
                 <input
                   type="number"
                   min="0"
-                  step="any"
-                  placeholder="ex : 3,17"
+                  step="0.01"
+                  required
                   value={newItem.prix_moyen_eur}
                   onChange={(e) => setNewItem((n) => ({ ...n, prix_moyen_eur: e.target.value }))}
                 />
@@ -182,17 +173,13 @@ export default function CatalogModal() {
                 <input
                   type="number"
                   min="0"
-                  step="any"
-                  placeholder="1"
+                  step="0.01"
+                  required
                   value={newItem.base_par_portion}
                   onChange={(e) => setNewItem((n) => ({ ...n, base_par_portion: e.target.value }))}
                 />
               </label>
             </div>
-            <p className="catalog-note add-product-hint">
-              Seul le nom est obligatoire. Le prix se saisit au {priceUnitFor(newItem.unite).label}
-              {priceUnitFor(newItem.unite).factor > 1 && ` (les quantités, elles, restent en ${newItem.unite})`}.
-            </p>
             <div className="add-product-actions">
               <button type="button" className="btn" onClick={() => setShowAddForm(false)}>
                 Annuler
