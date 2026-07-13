@@ -20,6 +20,7 @@ import {
   mealInRange,
   libraryNameOf,
   mealIsEmpty,
+  unitPriceOf,
 } from "./utils.js";
 
 const Ctx = createContext(null);
@@ -92,6 +93,13 @@ export function AppProvider({ children }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // La semaine affichée et sa date, tenues à jour pour pouvoir écrire la version courante
+  // depuis n'importe où sans dépendre d'une closure périmée.
+  const weekRef = useRef(week);
+  const mondayRef = useRef(currentMonday);
+  weekRef.current = week;
+  mondayRef.current = currentMonday;
+
   useEffect(() => {
     if (!ready) return;
     if (skipNextWeekSave.current) {
@@ -100,11 +108,35 @@ export function AppProvider({ children }) {
     }
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
-      api.saveWeek(currentMonday, week);
+      saveTimer.current = null;
+      api.saveWeek(mondayRef.current, weekRef.current);
     }, 500);
-    return () => clearTimeout(saveTimer.current);
+    // Pas de clearTimeout au démontage : il annulerait une sauvegarde en attente et
+    // ferait perdre la dernière modification (voir flushWeekSave).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [week, ready]);
+
+  // Écrit immédiatement la semaine si une sauvegarde différée est encore en attente.
+  // Sans ça, changer de semaine dans les 500 ms suivant une modification l'effaçait.
+  const flushWeekSave = useCallback(async () => {
+    if (!saveTimer.current) return;
+    clearTimeout(saveTimer.current);
+    saveTimer.current = null;
+    await api.saveWeek(mondayRef.current, weekRef.current);
+  }, []);
+
+  // Même risque quand on quitte la page ou qu'on bascule vers une autre app (mobile).
+  useEffect(() => {
+    const onHide = () => {
+      if (document.visibilityState === "hidden") flushWeekSave();
+    };
+    document.addEventListener("visibilitychange", onHide);
+    window.addEventListener("pagehide", flushWeekSave);
+    return () => {
+      document.removeEventListener("visibilitychange", onHide);
+      window.removeEventListener("pagehide", flushWeekSave);
+    };
+  }, [flushWeekSave]);
 
   useEffect(() => {
     if (!ready || skipNextWeekSave.current) return;
@@ -117,14 +149,23 @@ export function AppProvider({ children }) {
     setTimeout(() => setToast((t) => (t === msg ? null : t)), 2200);
   }, []);
 
-  const loadWeek = useCallback(async (monday) => {
-    const [w, ch, ss] = await Promise.all([api.getWeek(monday), api.getChecked(monday), api.getShoppingStatus(monday)]);
-    skipNextWeekSave.current = true;
-    setWeek(w);
-    setChecked(ch);
-    setShoppingStatus(ss);
-    setCurrentMonday(monday);
-  }, []);
+  const loadWeek = useCallback(
+    async (monday) => {
+      // On persiste la semaine courante AVANT d'en charger une autre.
+      await flushWeekSave();
+      const [w, ch, ss] = await Promise.all([
+        api.getWeek(monday),
+        api.getChecked(monday),
+        api.getShoppingStatus(monday),
+      ]);
+      skipNextWeekSave.current = true;
+      setWeek(w);
+      setChecked(ch);
+      setShoppingStatus(ss);
+      setCurrentMonday(monday);
+    },
+    [flushWeekSave]
+  );
 
   const goToWeek = useCallback(
     (deltaWeeks) => {
@@ -170,7 +211,7 @@ export function AppProvider({ children }) {
 
   const addFreeLine = useCallback(
     (day, mealKey) => {
-      addItem(day, mealKey, { id: uid(), name: "", qty: 1, unit: "pièce(s)", price: "", emoji: "", _src: "" });
+      addItem(day, mealKey, { id: uid(), name: "", qty: 1, unit: "pièce(s)", price: "", unitPrice: 0, emoji: "", _src: "" });
     },
     [addItem]
   );
@@ -202,8 +243,8 @@ export function AppProvider({ children }) {
       if (!modal) return;
       const { day, mealKey } = modal;
       const dayPortions = portionsForDay(day);
-      const { qty, unit, price, source, emoji } = catalogAddCalc(catalogItem, dayPortions, priceDB);
-      addItem(day, mealKey, { id: uid(), name: catalogItem.nom, qty, unit, price, emoji, _src: source });
+      const { qty, unit, price, unitPrice, source, emoji } = catalogAddCalc(catalogItem, dayPortions, priceDB);
+      addItem(day, mealKey, { id: uid(), name: catalogItem.nom, qty, unit, price, unitPrice, emoji, _src: source });
       showToast(`${emoji} ${catalogItem.nom} ajouté (${qty} ${unit})`);
     },
     [modal, portionsForDay, priceDB, addItem, showToast]
@@ -333,6 +374,7 @@ export function AppProvider({ children }) {
         return;
       }
       const ratio = rescaleInfo.newPortions / (rescaleInfo.oldPortions || 1);
+      let rescaled = 0;
       setWeek((w) => {
         const next = { ...w };
         for (const key of selectedKeys) {
@@ -341,17 +383,19 @@ export function AppProvider({ children }) {
           const items = meal.items.map((it) => {
             const qty = num(it.qty);
             if (!(qty > 0)) return it;
-            const unitPrice = num(it.price) > 0 ? num(it.price) / qty : 0;
+            const unitPrice = unitPriceOf(it);
             const newQty = roundQty(qty * ratio, it.unit);
             const newPrice = unitPrice > 0 ? round2(unitPrice * newQty) : it.price;
-            return { ...it, qty: newQty, price: newPrice };
+            rescaled++;
+            // Le prix unitaire ne change pas : seule la quantité (et donc le total) bouge.
+            return { ...it, qty: newQty, price: newPrice, unitPrice };
           });
           next[day] = { ...next[day], [mealKey]: { ...meal, items } };
         }
         return next;
       });
       setRescaleInfo(null);
-      showToast("Quantités ajustées");
+      showToast(`${rescaled} ligne${rescaled > 1 ? "s" : ""} recalculée${rescaled > 1 ? "s" : ""}`);
     },
     [rescaleInfo, showToast]
   );

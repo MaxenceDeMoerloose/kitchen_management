@@ -1,31 +1,72 @@
 import { useApp } from "../store.jsx";
 import { UNITS } from "../constants.js";
 import { TrashIcon } from "./icons.jsx";
+import { num, round2, unitPriceOf, money, priceUnitFor, toDisplayPrice } from "../utils.js";
 
 export default function IngredientRow({ day, mealKey, item }) {
   const { updateItem, removeItem, suggest, rememberPrice } = useApp();
 
+  // Chaque ligne porte son prix unitaire ; le prix affiché est le total de la ligne
+  // (prix unitaire × quantité). Les deux restent synchronisés quoi que l'on modifie.
+  const unitPrice = unitPriceOf(item);
+
   function handleNameBlur() {
-    const price = Number(item.price);
-    if (item.price !== "" && price > 0) return;
+    if (item.price !== "" && num(item.price) > 0) return;
     const s = suggest(item.name);
     if (!s) return;
+    // s.price est un prix UNITAIRE : le total de la ligne en dépend de la quantité.
+    const qty = num(item.qty);
     updateItem(day, mealKey, item.id, {
-      price: s.price,
+      unitPrice: s.price,
+      price: qty > 0 ? round2(s.price * qty) : "",
       unit: s.unit,
       _src: s.source,
       emoji: s.emoji ?? item.emoji,
     });
   }
 
-  function handlePriceChange(e) {
-    const v = e.target.value;
-    updateItem(day, mealKey, item.id, { price: v === "" ? "" : Number(v), _src: "" });
+  // Changer la quantité doit recalculer le prix : sans ça il restait figé sur l'ancien total.
+  function handleQtyChange(e) {
+    const raw = e.target.value;
+    if (raw === "") return updateItem(day, mealKey, item.id, { qty: "" });
+    const qty = Number(raw);
+    const patch = { qty };
+    if (unitPrice > 0) patch.price = round2(unitPrice * qty);
+    updateItem(day, mealKey, item.id, patch);
   }
 
+  // Changer l'unité change le sens du prix unitaire (€/g ≠ €/kg) : on repart du prix
+  // unitaire suggéré pour cette unité plutôt que de garder un chiffre devenu faux.
+  function handleUnitChange(e) {
+    const unit = e.target.value;
+    const patch = { unit };
+    const s = suggest(item.name);
+    const qty = num(item.qty);
+    if (s && s.unit === unit && s.price > 0) {
+      patch.unitPrice = s.price;
+      patch.price = qty > 0 ? round2(s.price * qty) : "";
+      patch._src = s.source;
+    }
+    updateItem(day, mealKey, item.id, patch);
+  }
+
+  // L'utilisateur saisit le TOTAL de la ligne : on en déduit le prix unitaire.
+  function handlePriceChange(e) {
+    const raw = e.target.value;
+    if (raw === "") return updateItem(day, mealKey, item.id, { price: "", _src: "" });
+    const price = Number(raw);
+    const qty = num(item.qty);
+    updateItem(day, mealKey, item.id, {
+      price,
+      unitPrice: qty > 0 ? price / qty : 0,
+      _src: "",
+    });
+  }
+
+  // On mémorise le prix UNITAIRE, jamais le total : la base de prix est relue comme un
+  // prix unitaire partout ailleurs (catalogue, tickets).
   function handlePriceBlur() {
-    const price = Number(item.price);
-    if (item.name.trim() && price > 0) rememberPrice(item.name, price, item.unit);
+    if (item.name.trim() && unitPrice > 0) rememberPrice(item.name, unitPrice, item.unit);
   }
 
   const estimated = item._src === "estimation";
@@ -51,16 +92,9 @@ export default function IngredientRow({ day, mealKey, item }) {
           min="0"
           step="any"
           aria-label="Quantité"
-          onChange={(e) =>
-            updateItem(day, mealKey, item.id, { qty: e.target.value === "" ? "" : Number(e.target.value) })
-          }
+          onChange={handleQtyChange}
         />
-        <select
-          className="ingredient-unit"
-          value={item.unit}
-          aria-label="Unité"
-          onChange={(e) => updateItem(day, mealKey, item.id, { unit: e.target.value })}
-        >
+        <select className="ingredient-unit" value={item.unit} aria-label="Unité" onChange={handleUnitChange}>
           {UNITS.map((u) => (
             <option key={u} value={u}>
               {u}
@@ -74,7 +108,7 @@ export default function IngredientRow({ day, mealKey, item }) {
             title={estimated ? "Prix estimé — corrigez si besoin" : "Prix total de la ligne"}
             value={item.price}
             min="0"
-            step="0.01"
+            step="any"
             aria-label="Prix total en euros"
             onChange={handlePriceChange}
             onBlur={handlePriceBlur}
@@ -89,6 +123,12 @@ export default function IngredientRow({ day, mealKey, item }) {
           <TrashIcon />
         </button>
       </div>
+      {unitPrice > 0 && (
+        <span className="ingredient-unit-price">
+          {money(toDisplayPrice(unitPrice, item.unit))} / {priceUnitFor(item.unit).label}
+          {estimated && " (estimé)"}
+        </span>
+      )}
     </div>
   );
 }
